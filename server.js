@@ -8,6 +8,10 @@ app.use(cors())
 app.use(express.json())
 app.use(express.static(path.join(__dirname)))
 
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'webhook.html'))
+})
+
 
 // In-memory store for webhook events
 const events = []
