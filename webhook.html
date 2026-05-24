@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webhook Live Feed</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #080c14;
+            --surface: #0e1420;
+            --surface2: #141c2e;
+            --border: #1e2d4a;
+            --orange: #ff5e24;
+            --teal: #00c9a7;
+            --blue: #38bdf8;
+            --green: #34d399;
+            --amber: #fbbf24;
+            --red: #f87171;
+            --text: #e2e8f0;
+            --muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+        }
+
+        .logo {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--orange);
+            box-shadow: 0 0 8px var(--orange);
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 15px;
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--teal);
+            background: rgba(0, 201, 167, .1);
+            border: 1px solid rgba(0, 201, 167, .25);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--teal);
+            animation: blink 1.2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.2;
+            }
+        }
+
+        .hero {
+            padding: 2rem 2rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: radial-gradient(ellipse 60% 100px at 50% 0%, rgba(255, 94, 36, .05) 0%, transparent 100%);
+        }
+
+        .hero h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .hero h1 span {
+            color: var(--orange);
+        }
+
+        .hero p {
+            font-size: 15px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 12px;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .stat strong {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 16px;
+            color: var(--text);
+        }
+
+        .main {
+            flex: 1;
+            padding: 1.5rem 2rem;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .clear-btn {
+            font-size: 15px;
+            color: var(--muted);
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 3px 10px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .clear-btn:hover {
+            color: var(--red);
+            border-color: var(--red);
+        }
+
+        .empty-feed {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--muted);
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+        }
+
+        .empty-feed .icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .empty-feed p {
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .event-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            animation: slideIn .3s ease both;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .event-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface2);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .event-card-header:hover {
+            background: #1a2540;
+        }
+
+        .event-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .event-index {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 15px;
+            color: var(--muted);
+            min-width: 24px;
+        }
+
+        .visitor-id {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 15px;
+            color: var(--teal);
+        }
+
+        .event-time {
+            font-size: 15px;
+            color: var(--muted);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .event-signals {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .sig-tag {
+            font-size: 15px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .sig-tag.danger {
+            background: rgba(248, 113, 113, .15);
+            color: var(--red);
+        }
+
+        .sig-tag.warn {
+            background: rgba(251, 191, 36, .12);
+            color: var(--amber);
+        }
+
+        .sig-tag.safe {
+            background: rgba(52, 211, 153, .1);
+            color: var(--green);
+        }
+
+        .sig-tag.info {
+            background: rgba(56, 189, 248, .1);
+            color: var(--blue);
+        }
+
+        .event-body {
+            padding: 12px 16px;
+            display: none;
+        }
+
+        .event-body.open {
+            display: block;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 8px;
+        }
+
+        .detail-field {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+
+        .detail-label {
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: var(--muted);
+            margin-bottom: 3px;
+        }
+
+        .detail-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            color: var(--text);
+            word-break: break-all;
+        }
+
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 10px 20px;
+            background: var(--surface);
+            font-size: 15px;
+            color: var(--muted);
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">
+            <div class="logo-dot"></div>
+            Webhook Live Feed
+        </div>
+        <div class="live-badge">
+            <div class="live-dot"></div>
+            Polling every 3s
+        </div>
+    </header>
+
+    <div class="hero">
+        <h1>Fingerprint <span>Webhook</span> Events</h1>
+        <p>Live feed of identification events pushed by Fingerprint to your backend. No button click needed — events
+            appear automatically.</p>
+        <div class="stats-bar">
+            <div class="stat"><strong id="totalCount">0</strong> total events</div>
+            <div class="stat"><strong id="uniqueVisitors">0</strong> unique visitors</div>
+            <div class="stat"><strong id="lastSeen">—</strong> last event</div>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="section-title">
+            Recent events
+            <button class="clear-btn" onclick="clearFeed()">Clear feed</button>
+        </div>
+        <div id="feed">
+            <div class="empty-feed">
+                <div class="icon">📡</div>
+                <p>Waiting for webhook events…<br>Visit any page that uses your Fingerprint JS agent to trigger one.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Webhook server: http://localhost:3001 · Fingerprint Inspector
+    </footer>
+
+    <script>
+        const BACKEND = 'http://localhost:3001'
+        let lastEventCount = 0
+        let expanded = new Set()
+
+        function toggleCard(id) {
+            const body = document.getElementById('body-' + id)
+            if (body.classList.contains('open')) {
+                body.classList.remove('open')
+                expanded.delete(id)
+            } else {
+                body.classList.add('open')
+                expanded.add(id)
+            }
+        }
+
+        function clearFeed() {
+            lastEventCount = 0
+            document.getElementById('feed').innerHTML = `
+      <div class="empty-feed">
+        <div class="icon">📡</div>
+        <p>Feed cleared. Waiting for new webhook events…</p>
+      </div>`
+            document.getElementById('totalCount').textContent = '0'
+            document.getElementById('uniqueVisitors').textContent = '0'
+            document.getElementById('lastSeen').textContent = '—'
+        }
+
+        function getSigTags(event) {
+            const tags = []
+
+            if (event.bot === 'bad') tags.push({ label: '🤖 Bot', cls: 'danger' })
+            if (event.vpn === true) tags.push({ label: '🔒 VPN', cls: 'warn' })
+            if (event.proxy === true) tags.push({ label: '🔀 Proxy', cls: 'warn' })
+            if (event.incognito === true) tags.push({ label: '👁 Incognito', cls: 'info' })
+            if (event.tampering === true) tags.push({ label: '⚠ Tampered', cls: 'danger' })
+            if (event.virtual_machine === true) tags.push({ label: '💻 VM', cls: 'warn' })
+            if (event.ip_blocklist?.tor_node === true) tags.push({ label: '🧅 Tor', cls: 'danger' })
+
+            const susp = event.suspect_score
+            if (susp != null) {
+                const cls = susp === 0 ? 'safe' : susp < 20 ? 'warn' : 'danger'
+                tags.push({ label: `Score: ${susp}`, cls })
+            }
+
+            if (tags.length === 0) tags.push({ label: '✓ Clean', cls: 'safe' })
+            return tags.map(t => `<span class="sig-tag ${t.cls}">${t.label}</span>`).join('')
+        }
+
+        function getDetails(event) {
+            const geo = event.ip_info?.v4?.geolocation || {}
+
+            return [
+                { label: 'Visitor ID', value: event.identification?.visitor_id || '—' },
+                { label: 'Request ID', value: event.event_id || '—' },
+                { label: 'Confidence', value: event.identification?.confidence?.score != null ? event.identification.confidence.score.toFixed(2) : '—' },
+                { label: 'IP Address', value: event.ip_address || '—' },
+                { label: 'City', value: geo.city_name || '—' },
+                { label: 'Country', value: geo.country_name ? `${geo.country_code} — ${geo.country_name}` : '—' },
+                { label: 'Browser', value: event.browser_details?.browser_name || '—' },
+                { label: 'OS', value: event.browser_details?.os || '—' },
+                { label: 'Received at', value: event.receivedAt ? new Date(event.receivedAt).toLocaleTimeString() : '—' },
+            ].map(d => `
+    <div class="detail-field">
+      <div class="detail-label">${d.label}</div>
+      <div class="detail-value">${d.value}</div>
+    </div>
+  `).join('')
+        }
+
+        async function poll() {
+            try {
+                const res = await fetch(`${BACKEND}/events`)
+                const events = await res.json()
+
+                if (events.length === 0) return
+
+                // Update stats
+                document.getElementById('totalCount').textContent = events.length
+                const unique = new Set(events.map(e => e.identification?.visitor_id).filter(Boolean)).size
+                document.getElementById('uniqueVisitors').textContent = unique
+                const last = new Date(events[0].receivedAt)
+                document.getElementById('lastSeen').textContent = last.toLocaleTimeString()
+
+                // Only re-render if count changed
+                if (events.length === lastEventCount) return
+                lastEventCount = events.length
+
+                document.getElementById('feed').innerHTML = events.map((event, i) => `
+        <div class="event-card">
+          <div class="event-card-header" onclick="toggleCard(${i})">
+            <div class="event-left">
+              <span class="event-index">#${events.length - i}</span>
+             <span class="visitor-id">${(event.identification?.visitor_id || 'unknown').substring(0, 20)} visit details</span>
+            </div>
+<div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+            <div class="event-signals">${getSigTags(event)}</div>
+              <span class="event-time">${new Date(event.receivedAt).toLocaleTimeString()}</span>
+            </div>
+          </div>
+          <div class="event-body ${expanded.has(i) ? 'open' : ''}" id="body-${i}">
+            <div class="detail-grid">${getDetails(event)}</div>
+          </div>
+        </div>
+      `).join('')
+
+            } catch (err) {
+                console.error('Poll error:', err)
+            }
+        }
+
+        // Poll every 3 seconds
+        poll()
+        setInterval(poll, 3000)
+    </script>
+
+</body>
+
+</html>
