@@ -402,16 +402,20 @@
             }
         }
 
-        function clearFeed() {
+        async function clearFeed() {
             lastEventCount = 0
+            expanded.clear()
             document.getElementById('feed').innerHTML = `
-      <div class="empty-feed">
-        <div class="icon">📡</div>
-        <p>Feed cleared. Waiting for new webhook events…</p>
-      </div>`
+    <div class="empty-feed">
+      <div class="icon">📡</div>
+      <p>Feed cleared. Waiting for new webhook events…</p>
+    </div>`
             document.getElementById('totalCount').textContent = '0'
             document.getElementById('uniqueVisitors').textContent = '0'
             document.getElementById('lastSeen').textContent = '—'
+
+            // Also clear on the server
+            await fetch(`${BACKEND}/clear`, { method: 'POST' })
         }
 
         function getSigTags(event) {
